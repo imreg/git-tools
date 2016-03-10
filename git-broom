@@ -1,0 +1,126 @@
+#!/bin/bash
+# 
+# A swiss knife to git branches managing easily the local and remote copy
+#
+# /usr/local/bin/gitClear
+# ln -s /usr/local/bin/gitClear /usr/bin/gitClear
+#
+# @author: Imre von Geczy
+# @date: 2016 March 09
+#
+################################################
+
+current=`git rev-parse --abbrev-ref HEAD`
+
+deleteRemote () {
+    remote=$1
+    item=$2
+
+    if [[ ${remote[@]} =~ "refs/heads/$item" ]]; then
+        echo
+        echo -e "\x1B[01;91mDo you want to delete on the git Server? \x1B[0m"
+        read -r -p "Are you sure? [y/N] " response 
+        echo "exist $item"
+        case $response in
+            [yY][eE][sS]|[yY]) 
+                echo -e "Remote Delete \x1B[01;93m $item \x1B[0m"
+                git branch -d $item
+                git push origin :$item
+                ;;
+             *)
+                echo -e "\x1B[01;92mNot removed \x1B[0m"
+                ;;
+        esac
+    else 
+        echo -e "\x1B[01;92mNo remote copy on the Server \x1B[0m"
+    fi
+}
+
+deleteLocal () {
+    item=$1
+    echo "Local delete $item"
+    git branch -D $item
+}
+
+deleteManager () {
+    current=$1
+    branch=($(git branch| cut -c 3-))
+    remote=($(git ls-remote --heads))
+    echo -e "\x1B[01;96mYou are in branch\x1B[0m: $current"
+    for item in ${branch[*]}
+    do
+        if [[ $item != $current && 
+            $item != "EPIC"* && 
+            $item != "dev_trunk"* && 
+            $item != "test_trunk"* && 
+            $item != "uat"* && 
+            $item != "master"* ]]; then
+            exists=`git show-ref refs/heads/$item`
+            if [ -n "$exists" ]; then
+                echo 
+                echo -e "Where do you want to delete it? Branch --\x1B[01;96m $item \x1B[0m"
+                read -r -p "Local or Remote or Nowhere or Quit? [l/r/n/q] " response
+                 
+                case $response in
+                    [lL][oO][cC][aA][lL]|[lL])
+                        deleteLocal $item
+                        ;;
+                    [rR][eE][mM][oO][tT][eE]|[rR])
+                        deleteRemote $remote $item
+                        ;;
+                    [qQ])
+                        exit
+                        ;;
+                    *)
+                        echo -e "\x1B[01;92mNoting happend \x1B[0m"
+                        ;;                                                                                                                                       esac
+            fi
+        fi
+    done
+    echo "Done!"
+    exit
+}
+pruneDry () {
+    echo "These local branches don’t exist on the server anymore"
+    git remote prune origin --dry-run   
+    echo "Done! Step forward by Enter key"
+    read 
+}
+pruneList() {
+    echo "Remove local branches which don’t exist on the server anymore"
+    git remote prune origin
+    echo "Done! Step forward by Enter key"
+    read
+}
+
+start () {
+    current=$1
+    while true; do
+
+        echo -e "1) Check what local branches do not exist on the server"
+        echo -e "2) Clean your local list"
+        echo -e "3) Delete Branches"
+        echo -e "x) Exit"
+        read -r -p "Select Options [1/2/3/q] " response
+        echo
+        case $response in
+        [1])
+            pruneDry
+            ;;
+        [2])
+            pruneList
+            ;;
+        [3])  
+            deleteManager $current
+            ;;
+        [qQ])
+            exit;
+            ;;
+        esac
+        clear
+    done
+}
+
+start $current
+
+
