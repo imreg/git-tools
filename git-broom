@@ -1,9 +1,13 @@
 #!/bin/bash
 # 
-# A swiss knife to git branches managing easily the local and remote copy
+# A swiss knife to git branches, managing easily the local and remote copy
+# This file should be called from a git repo where the maintenance is
 #
-# /usr/local/bin/gitClear
-# ln -s /usr/local/bin/gitClear /usr/bin/gitClear
+# A proposed use: 
+# Copy this file into /usr/local/bin/
+# 
+# ln -s /usr/local/bin/git-broom /usr/bin/git-broom
+#
 #
 # @author: Imre von Geczy
 # @date: 2016 March 09
@@ -12,80 +16,124 @@
 
 current=`git rev-parse --abbrev-ref HEAD`
 
-deleteRemote () {
-    remote=$1
-    item=$2
-
-    if [[ ${remote[@]} =~ "refs/heads/$item" ]]; then
-        echo
-        echo -e "\x1B[01;91mDo you want to delete on the git Server? \x1B[0m"
-        read -r -p "Are you sure? [y/N] " response 
-        echo "exist $item"
-        case $response in
-            [yY][eE][sS]|[yY]) 
-                echo -e "Remote Delete \x1B[01;93m $item \x1B[0m"
-                git branch -d $item
-                git push origin :$item
-                ;;
-             *)
-                echo -e "\x1B[01;92mNot removed \x1B[0m"
-                ;;
-        esac
-    else 
-        echo -e "\x1B[01;92mNo remote copy on the Server \x1B[0m"
-    fi
-}
-
 deleteLocal () {
     item=$1
-    echo "Local delete $item"
-    git branch -D $item
+
+    echo
+    echo -e "\x1B[01;95mLocal Delete:\x1B[0m \x1B[01;96m$item \x1B[0m"
+    echo
+    echo -e "\x1B[01;91mDo you want to delete on the Local? \x1B[0m"
+    read -r -p "Are you sure? [y/N] " response 
+
+    case $response in
+        [yY][eE][sS]|[yY]) 
+            git branch -D $item        
+            echo -e "Deleted: \x1B[01;93m $item \x1B[0m"
+            ;;
+        *)
+        echo -e "\x1B[01;92mNot removed \x1B[0m"
+            ;;
+    esac
+}
+
+deleteRemote () {
+    item=$1
+
+    echo
+    echo -e "\x1B[01;93mRemote Delete:\x1B[0m \x1B[01;96m$item \x1B[0m"
+    echo
+    echo -e "\x1B[01;91mDo you want to delete on the git Server? \x1B[0m"
+    read -r -p "Are you sure? [y/N] " response 
+
+    case $response in
+        [yY][eE][sS]|[yY])
+            git push origin --delete $item
+            echo -e "Deleted: \x1B[01;93m $item \x1B[0m"
+            ;;
+        *)
+        echo -e "\x1B[01;92mNot removed \x1B[0m"
+            ;;
+    esac
+}
+
+deleteBoth () {
+    item=$1
+
+    echo
+    echo -e "\x1B[01;92mBoth Delete:\x1B[0m \x1B[01;96m$item \x1B[0m"
+    echo
+    echo -e "\x1B[01;91mDo you want to delete on the git Server and on the Local? \x1B[0m"
+    read -r -p "Are you sure? [y/N] " response 
+
+    case $response in
+        [yY][eE][sS]|[yY]) 
+            git branch -D $item       
+            git push origin :$item
+            echo -e "Deleted: \x1B[01;93m $item \x1B[0m"
+            ;;
+        *)
+        echo -e "\x1B[01;92mNot removed \x1B[0m"
+            ;;
+    esac
 }
 
 deleteManager () {
     current=$1
-    branch=($(git branch| cut -c 3-))
-    remote=($(git ls-remote --heads))
-    echo -e "\x1B[01;96mYou are in branch\x1B[0m: $current"
-    for item in ${branch[*]}
-    do
-        if [[ $item != $current && 
-            $item != "EPIC"* && 
-            $item != "dev_trunk"* && 
-            $item != "test_trunk"* && 
-            $item != "uat"* && 
-            $item != "master"* ]]; then
-            exists=`git show-ref refs/heads/$item`
-            if [ -n "$exists" ]; then
-                echo 
-                echo -e "Where do you want to delete it? Branch --\x1B[01;96m $item \x1B[0m"
-                read -r -p "Local or Remote or Nowhere or Quit? [l/r/n/q] " response
-                 
-                case $response in
-                    [lL][oO][cC][aA][lL]|[lL])
-                        deleteLocal $item
-                        ;;
-                    [rR][eE][mM][oO][tT][eE]|[rR])
-                        deleteRemote $remote $item
-                        ;;
-                    [qQ])
-                        exit
-                        ;;
-                    *)
-                        echo -e "\x1B[01;92mNoting happend \x1B[0m"
-                        ;;                                                                                                                                       esac
-            fi
-        fi
-    done
-    echo "Done!"
-    exit
+    branch=$2
+    name=$3
+    date=$4
+    fdate=$5
+    if [[ $item != $current && 
+        $item != "EPIC"* && 
+        $item != "dev_trunk"* && 
+        $item != "test_trunk"* && 
+        $item != "uat"* && 
+        $item != "master"* ]]; then
+
+        echo
+        echo -e "Branch: \x1B[01;96m$branch \x1B[0m"
+        echo "Name: $name"
+        echo "Update: $fdate"
+        echo "Date: $date"
+        echo  
+        echo -e "\x1B[01;91mWhere do you want to delete? \x1B[0m"
+        echo -e "[\x1B[01;95mL\x1B[0m]ocal [\x1B[01;93mR\x1B[0m]emote [\x1B[01;92mB\x1B[0m]oth [\x1B[01;97mS\x1B[0m]kip [\x1B[01;97mQ\x1B[0m]uit "
+        read -r response
+
+        case $response in
+            [lL]) 
+                    # Local Delete
+                    deleteLocal $branch
+                ;;
+            [rR])
+                    # Remote Delete
+                    deleteRemote $branch
+                ;;
+            [bB])
+                    # Both, Remote-Local Delete
+                    deleteBoth $branch
+                ;;
+            [qQ])
+                echo -e "Quit"
+                return 1 
+                ;;
+            [sS])
+                echo -e "\x1B[01;92mStep forward \x1B[0m"
+                ;;
+        esac
+
+    fi
+
+    return 0
 }
+
 pruneDry () {
     echo "These local branches don’t exist on the server anymore"
     git remote prune origin --dry-run   
     echo "Done! Step forward by Enter key"
     read 
 }
+
 pruneList() {
     echo "Remove local branches which don’t exist on the server anymore"
     git remote prune origin
@@ -93,17 +141,54 @@ pruneList() {
     read
 }
 
+deleteBranches() {
+    local current=$1
+    local response=0
+
+    echo "Git branch list with authors and date"
+    echo -e "\x1B[01;96mYou are in branch\x1B[0m: $current"
+
+    local remoteBranch=($(git ls-remote --heads | grep -v origin))
+    local author=($(git config user.name))
+    for item in ${remoteBranch[*]}
+    do
+        IFS="/" 
+        read -a array <<< "$item"
+        local branch="${array[2]}"
+        if [[ -n $branch ]]; then
+            result=($(git show --format="%ai|%ar|%an" origin/$branch | head -n 1))
+            IFS="|" 
+            details=($result)
+            name=${details[2]} 
+            date=${details[0]}
+            fdate=${details[1]}
+            if [[ $name =~ $author ]]; then
+                echo "======================================================"
+                deleteManager $current $branch $name $date $fdate
+                local response=$?
+            fi
+        fi
+        if [[ $response -eq 1 ]]; then
+            echo "Exit here $response"
+            return 0
+        fi
+    done
+    unset remoteBranch
+    read
+}
+
 start () {
     current=$1
     while true; do
 
-        echo -e "1) Check what local branches do not exist on the server"
-        echo -e "2) Clean your local list"
-        echo -e "3) Delete Branches"
-        echo -e "x) Exit"
-        read -r -p "Select Options [1/2/3/q] " response
-        echo
-        case $response in
+    echo -e "1) Check what local branches do not exist on the server"
+    echo -e "2) Clean your local list"
+    echo -e "3) Delete Branches"
+    echo -e "x) Exit"
+    read -r -p "Select Options [1/2/3/q] " response
+    echo
+    
+    case $response in
         [1])
             pruneDry
             ;;
@@ -111,16 +196,14 @@ start () {
             pruneList
             ;;
         [3])  
-            deleteManager $current
+            deleteBranches $current
             ;;
         [qQ])
             exit;
             ;;
         esac
-        clear
+    clear
     done
 }
 
 start $current
-
-
