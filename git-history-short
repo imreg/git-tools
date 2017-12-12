@@ -1,0 +1,12 @@
+#!/bin/sh
+#git log -30 --date=short --pretty="%s | %an | %cD |%Cred %ar" | grep ^[CDUH]
+#git log -30 --date=short --pretty="%s | %an | %ar %ct " | grep ^[CDUH]
+
+#git log -60 --date=short --pretty="%s | %an | %cD |%Cred %ar"
+
+git log --date=short --pretty="%s | %an | %cD |%Cred %ar %Creset" --since=2.weeks | grep -v ^"Merge"
+
+echo "\n==================================================\nMerged\n"
+
+git log --date=short --pretty="%s | %an | %cD |%Cred %ar %Creset" --since=2.weeks | grep ^"Merge"
+
