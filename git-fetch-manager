@@ -1,0 +1,67 @@
+#!/bin/bash
+#set -x
+DIR=$HOME/Development/dashboard/module
+
+ARRAY=($(ls -d $DIR/*))
+#first=""
+update=""
+
+function menu_help {
+	echo "--default               Set the default"
+	echo "--help                  Help"
+}
+
+function menu {
+	while test $# -gt 0 
+	do
+		case "$1" in
+			--first)
+				 shift
+				 first=$1
+				 shift
+				 ;;
+			--last)
+				 shift
+				 last=$1
+				 shift
+				 ;;
+			--default)
+				 shift
+				 update="default"
+				 shift
+				 ;;
+			--help)
+				 shift
+				 menu_help 
+				 shift
+				 ;;
+			*)
+				echo "$1 is not a recognized flagek"
+				return 1;
+				;;
+		esac
+	done 
+}
+
+menu $@
+
+for index in "${ARRAY[@]}"
+do
+	
+	echo;echo -e "\e[96m$index \e[39m"
+	if [ ! -d $index/.git ]; then
+		echo -e "\e[95mNo Repo \e[39m"
+		continue
+	fi
+
+		git --git-dir=$index/.git --work-tree=$index status
+
+	if [[ "$update" =~ "default" ]]; then
+		git --git-dir=$index/.git --work-tree=$index checkout uat
+		git --git-dir=$index/.git --work-tree=$index pull 
+
+		echo -e "\e[93mDone \e[39m"
+	fi
+done
+
+
