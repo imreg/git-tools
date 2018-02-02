@@ -1,9 +1,10 @@
 #!/bin/bash
 #set -x
+
 DIR=$HOME/Development/dashboard/module
 
 ARRAY=($(ls -d $DIR/*))
-#first=""
+default_branch="uat"
 update=""
 branch=false
 verbose=false
@@ -75,7 +76,7 @@ done
 
 if [[ "$update" =~ "default" ]]
 then
-	branch="uat"
+	branch=$default_branch
 fi
 
 for index in "${ARRAY[@]}"
