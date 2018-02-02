@@ -5,61 +5,127 @@ DIR=$HOME/Development/dashboard/module
 ARRAY=($(ls -d $DIR/*))
 #first=""
 update=""
+branch=false
+verbose=false
+current=false
+fetch=false
+
+
+if [ $# -eq 0 ]
+then
+	echo "No arguments supplied"
+	echo "Use ?, -h, --help for help"
+	exit 0;
+fi
 
 function menu_help {
-	echo "--default               Set the default"
-	echo "--help                  Help"
+	echo "-d --default               Set the default"
+	echo "-b --branch                Set a specific branch over all repos"
+	echo "-s --status                Show Status over all repos"
+	echo "-c --current               Show current branch over all repos"
+	echo "-f --fetch                 Fetch all repos"
+	echo "-v --verbose               Verbose"
+	echo "-h --help                  Help"
 }
 
-function menu {
-	while test $# -gt 0 
+while test $# -gt 0 
 	do
 		case "$1" in
-			--first)
+			-d|--default)
+				shift
+				update="default"
+				shift
+				;;
+			-b|--branch)
+				shift
+				branch=$1
+				shift
+				;;
+			-v|--verbose)
+				shift
+				verbose=true
+				shift
+				;;
+			-c|--current)
+			    shift
+				current=true
+				shift
+				;;
+			-s|--status)
+			    shift
+				status=true
+				shift
+				;;
+			-f|--fetch)
+				shift
+				fetch=true
+				shift
+				;;
+			?|-h|--help)
 				 shift
-				 first=$1
-				 shift
-				 ;;
-			--last)
-				 shift
-				 last=$1
-				 shift
-				 ;;
-			--default)
-				 shift
-				 update="default"
-				 shift
-				 ;;
-			--help)
-				 shift
-				 menu_help 
-				 shift
+				 menu_help
+				 exit 0
 				 ;;
 			*)
-				echo "$1 is not a recognized flagek"
-				return 1;
+				echo "$1 is not a recognized option"
+				break
 				;;
 		esac
-	done 
-}
+done 
 
-menu $@
+if [[ "$update" =~ "default" ]]
+then
+	branch="uat"
+fi
 
 for index in "${ARRAY[@]}"
 do
-	
 	echo;echo -e "\e[96m$index \e[39m"
-	if [ ! -d $index/.git ]; then
+	
+	if [ ! -d $index/.git ]; 
+	then
 		echo -e "\e[95mNo Repo \e[39m"
 		continue
 	fi
+    
+	GIT="git --git-dir=$index/.git --work-tree=$index"
+	
+	if [[  $status == true || $verbose == true ]]
+	then
+		$GIT status
+	fi
 
-		git --git-dir=$index/.git --work-tree=$index status
+	if [[ $current == true || $verbose == true ]]
+	then
+		# Read current branch
+		echo -e "\e[93m`$GIT branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`\e[39m"
+	fi
 
-	if [[ "$update" =~ "default" ]]; then
-		git --git-dir=$index/.git --work-tree=$index checkout uat
-		git --git-dir=$index/.git --work-tree=$index pull 
+	if [[ `$GIT branch --list $branch` && $branch != "" ]]
+	then
+	   echo "Branch name $branch already exists."
+	fi
 
+	if [[ $fetch == true ]]
+	then
+		$GIT fetch origin
+	fi
+
+	if [[ $branch != "" ]]
+	then
+
+		if [[ `$GIT branch --list $branch` && $branch != "" ]]
+			then
+				$GIT checkout $branch
+			else
+				$GIT checkout -b $branch origin/$branch
+		fi
+
+		if [[ `$GIT ls-remote --heads origin $branch | wc -l` == 1 && $branch != "" ]]
+		then
+			$GIT pull origin/$branch
+		fi
+	
 		echo -e "\e[93mDone \e[39m"
 	fi
 done
