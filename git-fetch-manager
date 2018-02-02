@@ -6,7 +6,7 @@ DIR=$HOME/Development/dashboard/module
 ARRAY=($(ls -d $DIR/*))
 default_branch="uat"
 update=""
-branch=false
+branch=""
 verbose=false
 current=false
 fetch=false
@@ -124,7 +124,7 @@ do
 
 		if [[ `$GIT ls-remote --heads origin $branch | wc -l` == 1 && $branch != "" ]]
 		then
-			$GIT pull origin/$branch
+			$GIT pull 
 		fi
 	
 		echo -e "\e[93mDone \e[39m"
