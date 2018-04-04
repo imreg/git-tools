@@ -1,12 +1,66 @@
-#!/bin/sh
-#git log -30 --date=short --pretty="%s | %an | %cD |%Cred %ar" | grep ^[CDUH]
-#git log -30 --date=short --pretty="%s | %an | %ar %ct " | grep ^[CDUH]
+#!/bin/bash
 
-#git log -60 --date=short --pretty="%s | %an | %cD |%Cred %ar"
+SINCE=""
+MERGE=" | grep -v ^Merge"
+function menu_help {
+	echo "-d   --days               Last days"
+	echo "-w   --weeks              Last weeks"
+	echo "-a   --air                Only AIR-"
+	echo "-c   --csi                Only CSI-"
+	echo "-g   --grep               Any string"
+	echo "-m   --branch             Merged"
+	echo "-h,? --help               Help"
+}
 
-git log --date=short --pretty="%s | %an | %cD |%Cred %ar %Creset" --since=2.weeks | grep -v ^"Merge"
 
-echo "\n==================================================\nMerged\n"
+while test $# -gt 0
+	do
+		case "$1" in
+			-d|--days)
+				shift
+				if [[ $1 =~ [0-9]+ ]]
+                then
+                    SINCE="--since=$1.days"
+                fi;
+				shift
+				;;
+			-w|--weeks)
+				shift
+				if [[ $1 =~ [0-9]+ ]]
+                then
+                    SINCE="--since=$1.weeks"
+                fi;
+				shift
+				;;
+		    -a|--air)
+		    	shift
+                   AIR="| grep -i ^AIR-"
+           		shift
+            	;;
+		    -c|--csi)
+		    	shift
+		    	echo "hello"
+                   CSI=" | grep -i ^CSI-"
+            	shift
+            	;;
+            -g|--grep)
+                shift
+                echo $1
+                   GREP=" | grep $1"
+               	shift
+               	;;
+			-m|--merged)
+				shift
+                   MERGE=" | grep -i ^Merge"
+				shift
+				;;
+			?|-h|--help)
+            	shift
+            	    menu_help
+            	exit 0
+            	;;
+		esac
+done
 
-git log --date=short --pretty="%s | %an | %cD |%Cred %ar %Creset" --since=2.weeks | grep ^"Merge"
-
+GIT="git log --date=short --pretty=\"%s | %an | %cD |%Cred %ar %Creset\" $SINCE $MERGE $CSI $AIR $GREP"
+eval $GIT

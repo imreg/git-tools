@@ -1,33 +1,33 @@
 #!/bin/bash
 #set -x
 
-DIR=$HOME/Development/dashboard/module
+LOCATION="Development/dashboard/module"
 
-ARRAY=($(ls -d $DIR/*))
-default_branch="uat"
 update=""
 branch=""
 verbose=false
 current=false
 fetch=false
 
+function menu_help {
+	echo "-d   --default               Set the default"
+	echo "-dir --directory             Set the main location of repos"
+	echo "-b   --branch                Set a specific branch over all repos"
+	echo "-s   --status                Show Status over all repos"
+	echo "-c   --current               Show current branch over all repos"
+	echo "-f   --fetch                 Fetch all repos"
+	echo "-v   --verbose               Verbose"
+	echo "-h,? --help                  Help"
+}
+
 
 if [ $# -eq 0 ]
 then
+	
 	echo "No arguments supplied"
-	echo "Use ?, -h, --help for help"
+	menu_help
 	exit 0;
 fi
-
-function menu_help {
-	echo "-d --default               Set the default"
-	echo "-b --branch                Set a specific branch over all repos"
-	echo "-s --status                Show Status over all repos"
-	echo "-c --current               Show current branch over all repos"
-	echo "-f --fetch                 Fetch all repos"
-	echo "-v --verbose               Verbose"
-	echo "-h --help                  Help"
-}
 
 while test $# -gt 0 
 	do
@@ -35,6 +35,11 @@ while test $# -gt 0
 			-d|--default)
 				shift
 				update="default"
+				shift
+				;;
+			-dir|--directory)
+				shift
+                LOCATION=$1
 				shift
 				;;
 			-b|--branch)
@@ -72,7 +77,11 @@ while test $# -gt 0
 				break
 				;;
 		esac
-done 
+done
+
+DIR=$HOME/$LOCATION
+ARRAY=($(ls -d $DIR/*))
+default_branch="uat"
 
 if [[ "$update" =~ "default" ]]
 then
