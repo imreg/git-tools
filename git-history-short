@@ -35,32 +35,31 @@ while test $# -gt 0
 		    -a|--air)
 		    	shift
                    AIR="| grep -i ^AIR-"
-           		shift
             	;;
 		    -c|--csi)
 		    	shift
-		    	echo "hello"
                    CSI=" | grep -i ^CSI-"
-            	shift
             	;;
             -g|--grep)
                 shift
-                echo $1
                    GREP=" | grep $1"
                	shift
                	;;
 			-m|--merged)
 				shift
                    MERGE=" | grep -i ^Merge"
-				shift
 				;;
 			?|-h|--help)
             	shift
             	    menu_help
             	exit 0
             	;;
+            *)
+                echo "$1 is not a recognized option"
+                exit 0
+            ;;
 		esac
 done
 
-GIT="git log --date=short --pretty=\"%s | %an | %cD |%Cred %ar %Creset\" $SINCE $MERGE $CSI $AIR $GREP"
+GIT="git log --date=short --pretty=\"%s |%Cgreen %an %Creset| %cD |%Cred %ar %Creset\" $SINCE $MERGE $CSI $AIR $GREP"
 eval $GIT
